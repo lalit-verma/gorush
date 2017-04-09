@@ -10,7 +10,7 @@ package autocert
 
 import (
 	"bytes"
-	"context"
+	"golang.org/x/net/context"
 	"crypto"
 	"crypto/ecdsa"
 	"crypto/elliptic"
