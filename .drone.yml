@@ -1,5 +1,5 @@
 workspace:
-  path: /go/src/github.com/appleboy/gorush
+  path: /go/src/github.com/lalit-verma/gorush
 
 pipeline:
   clone:
@@ -37,7 +37,7 @@ pipeline:
 
   docker:
     image: plugins/docker
-    repo: appleboy/gorush
+    repo: lalit-verma/gorush
     tags: [ '${DRONE_TAG}' ]
     when:
       event: [ tag ]
@@ -45,7 +45,7 @@ pipeline:
 
   docker:
     image: plugins/docker
-    repo: appleboy/gorush
+    repo: lalit-verma/gorush
     tags: [ 'latest' ]
     when:
       event: [ push ]

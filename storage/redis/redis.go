@@ -4,7 +4,7 @@ import (
 	"log"
 	"strconv"
 
-	"github.com/appleboy/gorush/config"
+	"github.com/lalit-verma/gorush/config"
 	"gopkg.in/redis.v5"
 )
 
