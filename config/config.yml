@@ -3,7 +3,7 @@ core:
   worker_num: 0 # default worker number is runtime.NumCPU()
   queue_num: 0 # default queue number is 8192
   max_notification: 100
-  sync: false # set true if you get http response after finish send notification.
+  sync: true # set true if you get http response after finish send notification.
   mode: "release"
   ssl: false
   cert_path: "cert.pem"
@@ -26,17 +26,42 @@ api:
   sys_stat_uri: "/sys/stats"
   metric_uri: "/metrics"
 
-android:
-  enabled: true
-  apikey: "YOUR_API_KEY"
-  max_retry: 0 # resend fail notification, default value zero is disabled
+# android:
+#   enabled: true
+#   apikey: "AIzaSyDDl2OZL9pMVUuMWbM52Tyj7wFTse8uiVk"
+#   max_retry: 3 # resend fail notification, default value zero is disabled
 
-ios:
-  enabled: false
-  key_path: "key.pem"
-  password: "" # certificate password, default as empty string.
-  production: false
-  max_retry: 0 # resend fail notification, default value zero is disabled
+# ios:
+#   enabled: false
+#   key_path: "key.pem"
+#   password: "" # certificate password, default as empty string.
+#   production: false
+#   max_retry: 0 # resend fail notification, default value zero is disabled
+
+apps:
+  normal:
+    android:
+      enabled: true
+      apikey: "AIzaSyDDl2OZL9pMVUuMWbM52Tyj7wFTse8uiVk"
+      max_retry: 3 # resend fail notification, default value zero is disabled
+
+    ios:
+      enabled: false
+      key_path: "key.pem"
+      password: ""
+      production: false
+
+  delivery:
+    android:
+      enabled: true
+      apikey: "AIzaSyDDl2OZL9pMVUuMWbM52Tyj7wFTse8uiVk"
+      max_retry: 3 # resend fail notification, default value zero is disabled
+
+    ios:
+      enabled: false
+      key_path: "key.pem"
+      password: ""
+      production: false
 
 log:
   format: "string" # string or json

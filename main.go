@@ -26,12 +26,6 @@ func checkInput(token, message string) {
 var Version = "No Version Provided"
 
 var usageStr = `
-  ________                              .__
- /  _____/   ____ _______  __ __  ______|  |__
-/   \  ___  /  _ \\_  __ \|  |  \/  ___/|  |  \
-\    \_\  \(  <_> )|  | \/|  |  /\___ \ |   Y  \
- \______  / \____/ |__|   |____//____  >|___|  /
-        \/                           \/      \/
 
 Usage: gorush [options]
 
@@ -100,30 +94,44 @@ func main() {
 	var token string
 	var proxy string
 	var title string
+	var app string
+	var port string
+	var iosKeyPath string
+	var iosPassword string
+	var iosEnabled bool
+	var iosProduction bool
+	var androidAPIKey string
+	var androidEnabled bool
 
 	flag.BoolVar(&showVersion, "version", false, "Print version information.")
 	flag.BoolVar(&showVersion, "v", false, "Print version information.")
 	flag.StringVar(&configFile, "c", "", "Configuration file path.")
 	flag.StringVar(&configFile, "config", "", "Configuration file path.")
 	flag.StringVar(&opts.Core.PID.Path, "pid", "", "PID file path.")
-	flag.StringVar(&opts.Ios.KeyPath, "i", "", "iOS certificate key file path")
-	flag.StringVar(&opts.Ios.KeyPath, "key", "", "iOS certificate key file path")
-	flag.StringVar(&opts.Ios.Password, "P", "", "iOS certificate password for gorush")
-	flag.StringVar(&opts.Ios.Password, "password", "", "iOS certificate password for gorush")
-	flag.StringVar(&opts.Android.APIKey, "k", "", "Android api key configuration for gorush")
-	flag.StringVar(&opts.Android.APIKey, "apikey", "", "Android api key configuration for gorush")
-	flag.StringVar(&opts.Core.Port, "p", "", "port number for gorush")
-	flag.StringVar(&opts.Core.Port, "port", "", "port number for gorush")
+	flag.StringVar(&port, "p", "", "port number for gorush")
+	flag.StringVar(&port, "port", "", "port number for gorush")
+
 	flag.StringVar(&token, "t", "", "token string")
 	flag.StringVar(&token, "token", "", "token string")
 	flag.StringVar(&message, "m", "", "notification message")
 	flag.StringVar(&message, "message", "", "notification message")
 	flag.StringVar(&title, "title", "", "notification title")
-	flag.BoolVar(&opts.Android.Enabled, "android", false, "send android notification")
-	flag.BoolVar(&opts.Ios.Enabled, "ios", false, "send ios notification")
-	flag.BoolVar(&opts.Ios.Production, "production", false, "production mode in iOS")
 	flag.StringVar(&topic, "topic", "", "apns topic in iOS")
 	flag.StringVar(&proxy, "proxy", "", "http proxy url")
+
+	flag.StringVar(&app, "app", gorush.AppNameDefault, "app to use")
+
+	flag.StringVar(&iosKeyPath, "i", "", "iOS certificate key file path")
+	flag.StringVar(&iosKeyPath, "key", "", "iOS certificate key file path")
+	flag.StringVar(&iosPassword, "P", "", "iOS certificate password for gorush")
+	flag.StringVar(&iosPassword, "password", "", "iOS certificate password for gorush")
+	flag.BoolVar(&iosEnabled, "ios", false, "send ios notification")
+	flag.BoolVar(&iosProduction, "production", false, "production mode in iOS")
+
+	flag.StringVar(&androidAPIKey, "k", "", "Android api key configuration for gorush")
+	flag.StringVar(&androidAPIKey, "apikey", "", "Android api key configuration for gorush")
+	flag.BoolVar(&androidEnabled, "android", false, "send android notification")
+
 
 	flag.Usage = usage
 	flag.Parse()
@@ -156,22 +164,39 @@ func main() {
 		}
 	}
 
-	if opts.Ios.KeyPath != "" {
-		gorush.PushConf.Ios.KeyPath = opts.Ios.KeyPath
-	}
-
-	if opts.Ios.Password != "" {
-		gorush.PushConf.Ios.Password = opts.Ios.Password
-	}
-
-	if opts.Android.APIKey != "" {
-		gorush.PushConf.Android.APIKey = opts.Android.APIKey
-	}
-
 	// overwrite server port
-	if opts.Core.Port != "" {
-		gorush.PushConf.Core.Port = opts.Core.Port
+	if port != "" {
+		gorush.PushConf.Core.Port = port
 	}
+
+	// create a dynamic app from command line flags
+	gorush.PushConf.Apps[gorush.AppNameDynamic] = config.SectionApp{}
+	dynamicAppConfig := gorush.PushConf.Apps[gorush.AppNameDynamic]
+
+	if iosKeyPath != "" {
+		dynamicAppConfig.Ios.KeyPath = iosKeyPath
+	}
+
+	if iosPassword != "" {
+		dynamicAppConfig.Ios.Password = iosPassword
+	}
+
+	if iosEnabled {
+		dynamicAppConfig.Ios.Enabled = iosEnabled
+	}
+
+	if iosProduction {
+		dynamicAppConfig.Ios.Production = iosProduction
+	}
+
+	if androidAPIKey != "" {
+		dynamicAppConfig.Android.APIKey = androidAPIKey
+	}
+
+	if androidEnabled {
+		dynamicAppConfig.Android.Enabled = androidEnabled
+	}
+
 
 	if err = gorush.InitLog(); err != nil {
 		log.Println(err)
@@ -195,13 +220,14 @@ func main() {
 	}
 
 	// send android notification
-	if opts.Android.Enabled {
-		gorush.PushConf.Android.Enabled = opts.Android.Enabled
+	if dynamicAppConfig.Android.Enabled {
+
 		req := gorush.PushNotification{
 			Tokens:   []string{token},
 			Platform: gorush.PlatFormAndroid,
 			Message:  message,
 			Title:    title,
+			AppID:    gorush.AppNameDynamic,
 		}
 
 		err := gorush.CheckMessage(req)
@@ -216,18 +242,15 @@ func main() {
 		return
 	}
 
-	// send android notification
-	if opts.Ios.Enabled {
-		if opts.Ios.Production {
-			gorush.PushConf.Ios.Production = opts.Ios.Production
-		}
+	// send ios notification
+	if dynamicAppConfig.Ios.Enabled {
 
-		gorush.PushConf.Ios.Enabled = opts.Ios.Enabled
 		req := gorush.PushNotification{
 			Tokens:   []string{token},
 			Platform: gorush.PlatFormIos,
 			Message:  message,
 			Title:    title,
+			AppID:    gorush.AppNameDynamic
 		}
 
 		if topic != "" {
@@ -241,7 +264,6 @@ func main() {
 		}
 
 		gorush.InitAppStatus()
-		gorush.InitAPNSClient()
 		gorush.PushToIOS(req)
 
 		return
@@ -262,7 +284,6 @@ func main() {
 	}
 
 	gorush.InitAppStatus()
-	gorush.InitAPNSClient()
 	gorush.InitWorkers(gorush.PushConf.Core.WorkerNum, gorush.PushConf.Core.QueueNum)
 	gorush.RunHTTPServer()
 }

@@ -9,12 +9,11 @@ import (
 
 // ConfYaml is config structure.
 type ConfYaml struct {
-	Core    SectionCore    `yaml:"core"`
-	API     SectionAPI     `yaml:"api"`
-	Android SectionAndroid `yaml:"android"`
-	Ios     SectionIos     `yaml:"ios"`
-	Log     SectionLog     `yaml:"log"`
-	Stat    SectionStat    `yaml:"stat"`
+	Core    SectionCore    			`yaml:"core"`
+	API     SectionAPI     			`yaml:"api"`
+	Apps 	map[string]SectionApp   `yaml:"apps"`
+	Log     SectionLog     			`yaml:"log"`
+	Stat    SectionStat    			`yaml:"stat"`
 }
 
 // SectionCore is sub section of config.
@@ -48,6 +47,12 @@ type SectionAPI struct {
 	ConfigURI  string `yaml:"config_uri"`
 	SysStatURI string `yaml:"sys_stat_uri"`
 	MetricURI  string `yaml:"metric_uri"`
+}
+
+// SectionApp is sub section of config
+type SectionApp struct {
+	Android SectionAndroid `yaml:"android"`
+	Ios     SectionIos     `yaml:"ios"`
 }
 
 // SectionAndroid is sub section of config.
@@ -144,18 +149,6 @@ func BuildDefaultPushConf() ConfYaml {
 	conf.API.ConfigURI = "/api/config"
 	conf.API.SysStatURI = "/sys/stats"
 	conf.API.MetricURI = "/metrics"
-
-	// Android
-	conf.Android.Enabled = false
-	conf.Android.APIKey = ""
-	conf.Android.MaxRetry = 0
-
-	// iOS
-	conf.Ios.Enabled = false
-	conf.Ios.KeyPath = "key.pem"
-	conf.Ios.Password = ""
-	conf.Ios.Production = false
-	conf.Ios.MaxRetry = 0
 
 	// log
 	conf.Log.Format = "string"
