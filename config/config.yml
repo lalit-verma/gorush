@@ -50,6 +50,7 @@ apps:
       key_path: "key.pem"
       password: ""
       production: false
+      max_retry: 0 # resend fail notification, default value zero is disabled
 
   delivery:
     android:
@@ -62,6 +63,7 @@ apps:
       key_path: "key.pem"
       password: ""
       production: false
+      max_retry: 0 # resend fail notification, default value zero is disabled
 
 log:
   format: "string" # string or json

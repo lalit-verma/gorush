@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-	"os"
+	_"os"
 	"path/filepath"
 	"sync"
 	"time"
@@ -421,7 +421,7 @@ func PushToIOS(req PushNotification) bool {
 	LogAccess.Debug("Start push notification for iOS")
 	defer req.Done()
 	var retryCount = 0
-	var maxRetry = PushConf.Ios.MaxRetry
+	var maxRetry = PushConf.Apps[req.AppID].Ios.MaxRetry
 
 	if req.Retry > 0 && req.Retry < maxRetry {
 		maxRetry = req.Retry
