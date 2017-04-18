@@ -557,6 +557,12 @@ func PushToAndroid(req PushNotification) bool {
 		maxRetry = req.Retry
 	}
 
+	// Set api key if none provided in req
+	var apiKey = req.APIKey
+	if apiKey == "" {
+		apiKey = PushConf.Apps[req.AppID].Android.APIKey
+	}
+
 	// check message
 	err := CheckMessage(req)
 
@@ -569,7 +575,7 @@ Retry:
 	var isError = false
 	notification := GetAndroidNotification(req)
 
-	res, err := gcm.SendHttp(req.APIKey, notification)
+	res, err := gcm.SendHttp(apiKey, notification)
 
 	if err != nil {
 		// GCM server error
