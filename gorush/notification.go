@@ -76,6 +76,7 @@ type PushNotification struct {
 	RestrictedPackageName string           `json:"restricted_package_name,omitempty"`
 	DryRun                bool             `json:"dry_run,omitempty"`
 	Notification          gcm.Notification `json:"notification,omitempty"`
+	AndroidData           D                `json:"android_data,omitempty"`
 
 	// iOS
 	Expiration     int64    `json:"expiration,omitempty"`
@@ -86,6 +87,7 @@ type PushNotification struct {
 	URLArgs        []string `json:"url-args,omitempty"`
 	Alert          Alert    `json:"alert,omitempty"`
 	MutableContent bool     `json:"mutable-content,omitempty"`
+	IosData    	   D        `json:"ios_data,omitempty"`
 }
 
 // Done decrements the WaitGroup counter.
@@ -405,7 +407,13 @@ func GetIOSNotification(req PushNotification) *apns.Notification {
 		payload.URLArgs(req.URLArgs)
 	}
 
+	// Get Common data fields
 	for k, v := range req.Data {
+		payload.Custom(k, v)
+	}
+
+	// Get ios specific data fields
+	for k, v := range req.IosData {
 		payload.Custom(k, v)
 	}
 
@@ -504,9 +512,16 @@ func GetAndroidNotification(req PushNotification) gcm.HttpMessage {
 	}
 
 	// Add another field
-	if len(req.Data) > 0 {
+	if (len(req.Data) > 0 || len(req.AndroidData) > 0) {
 		notification.Data = make(map[string]interface{})
+
+		// Get Common data fields
 		for k, v := range req.Data {
+			notification.Data[k] = v
+		}
+
+		// Get platform specific data fields
+		for k, v := range req.AndroidData {
 			notification.Data[k] = v
 		}
 	}
