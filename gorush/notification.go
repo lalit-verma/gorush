@@ -224,6 +224,10 @@ func GetAPNSClient(AppID string) (*apns.Client, error) {
 	var present bool
 	var err error
 
+	if len(apnsClients.clients) == 0 {
+		apnsClients.clients = make(map[string]*apns.Client, 0)
+	}
+
 	apnsClients.lock.RLock()
 	if client, present = apnsClients.clients[AppID]; !present {
 		// The connection wasn't found, so we'll create it.
