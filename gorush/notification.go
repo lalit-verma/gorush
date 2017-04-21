@@ -10,6 +10,8 @@ import (
 	"sync"
 	"time"
 
+	"strings"
+
 	"github.com/google/go-gcm"
 	apns "github.com/sideshow/apns2"
 	"github.com/sideshow/apns2/certificate"
@@ -189,11 +191,19 @@ func initAPNSClient(AppID string) (*apns.Client, error) {
 
 		ext := filepath.Ext(PushConf.Apps[AppID].Ios.KeyPath)
 
+		// Append the certificates dir for the path
+		IosKeyPath := PushConf.Apps[AppID].Ios.KeyPath
+		CertCommonDir := PushConf.Core.CertDir
+		if (len(strings.TrimSpace(CertCommonDir)) != 0) {
+
+			IosKeyPath = CertCommonDir + IosKeyPath
+		}
+
 		switch ext {
 		case ".p12":
-			CertificatePemIos, err = certificate.FromP12File(PushConf.Apps[AppID].Ios.KeyPath, PushConf.Apps[AppID].Ios.Password)
+			CertificatePemIos, err = certificate.FromP12File(IosKeyPath, PushConf.Apps[AppID].Ios.Password)
 		case ".pem":
-			CertificatePemIos, err = certificate.FromPemFile(PushConf.Apps[AppID].Ios.KeyPath, PushConf.Apps[AppID].Ios.Password)
+			CertificatePemIos, err = certificate.FromPemFile(IosKeyPath, PushConf.Apps[AppID].Ios.Password)
 		default:
 			err = errors.New("wrong certificate key extension")
 		}
