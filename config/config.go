@@ -26,6 +26,7 @@ type SectionCore struct {
 	Sync            bool           `yaml:"sync"`
 	SSL             bool           `yaml:"ssl"`
 	CertPath        string         `yaml:"cert_path"`
+	CertDir         string         `yaml:"cert_dir"`
 	KeyPath         string         `yaml:"key_path"`
 	HTTPProxy       string         `yaml:"http_proxy"`
 	PID             SectionPID     `yaml:"pid"`
@@ -132,6 +133,7 @@ func BuildDefaultPushConf() ConfYaml {
 	conf.Core.Sync = false
 	conf.Core.SSL = false
 	conf.Core.CertPath = "cert.pem"
+	conf.Core.CertDir = ""
 	conf.Core.KeyPath = "key.pem"
 	conf.Core.MaxNotification = int64(100)
 	conf.Core.HTTPProxy = ""
