@@ -7,6 +7,7 @@ core:
   mode: "release"
   ssl: false
   cert_path: "cert.pem"
+  cert_dir: ""
   key_path: "key.pem"
   http_proxy: "" # only working for GCM server
   pid:
