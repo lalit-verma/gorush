@@ -625,8 +625,8 @@ Retry:
 // HTTP Connection Server Reference for FCM
 // https://github.com/NaySoftware/go-fcm/blob/master/fcm.go#L75
 // https://firebase.google.com/docs/cloud-messaging/http-server-ref
-func GetFcmNotification(req PushNotification) (fcm.NotificationPayload, interface{}) {
-	notification := fcm.NotificationPayload{}
+func GetFcmNotification(req PushNotification) (*fcm.NotificationPayload, interface{}) {
+	notification := new(fcm.NotificationPayload)
 	data := make(map[string]interface{})
 
 	// Add another field
