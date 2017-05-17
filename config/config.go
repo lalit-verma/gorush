@@ -52,8 +52,9 @@ type SectionAPI struct {
 
 // SectionApp is sub section of config
 type SectionApp struct {
-	Android SectionAndroid `yaml:"android"`
-	Ios     SectionIos     `yaml:"ios"`
+	Android    SectionAndroid `yaml:"android"`
+	AndroidFcm SectionAndroid `yaml:"android_fcm"`
+	Ios        SectionIos     `yaml:"ios"`
 }
 
 // SectionAndroid is sub section of config.

@@ -16,6 +16,8 @@ import (
 	apns "github.com/sideshow/apns2"
 	"github.com/sideshow/apns2/certificate"
 	"github.com/sideshow/apns2/payload"
+
+	"github.com/NaySoftware/go-fcm"
 )
 
 // D provide string array
@@ -106,6 +108,14 @@ type ApnsClients struct {
 }
 
 var apnsClients = &ApnsClients{}
+
+// FcmClients is collection of FCM client connections
+type FcmClients struct {
+	lock    sync.RWMutex
+	clients map[string]*fcm.FcmClient
+}
+
+var fcmClients = &FcmClients{}
 
 // CheckMessage for check request message
 func CheckMessage(req PushNotification) error {
@@ -222,6 +232,54 @@ func initAPNSClient(AppID string) (*apns.Client, error) {
 	}
 
 	return apnsClient, nil
+}
+
+// initFCMClient initializes an FCM Client for the given AppID.
+func initFCMClient(AppID string) (*fcm.FcmClient, error) {
+	var err error
+	var fcmClient *fcm.FcmClient
+
+	if PushConf.Apps[AppID].AndroidFcm.Enabled {
+
+		apiKey := PushConf.Apps[AppID].AndroidFcm.APIKey
+
+		fcmClient = fcm.NewFcmClient(apiKey)
+
+		return fcmClient, nil
+	}
+
+	err = errors.New("FCM not enabled")
+
+	return nil, err
+}
+
+// GetFCMClient returns an existing FCM client connection if available else
+// creates a new connection and returns
+func GetFcmClient(AppID string) (*fcm.FcmClient, error) {
+	var client *fcm.FcmClient
+	var present bool
+	var err error
+
+	if len(fcmClients.clients) == 0 {
+		fcmClients.clients = make(map[string]*fcm.FcmClient, 0)
+	}
+
+	fcmClients.lock.RLock()
+	if client, present = fcmClients.clients[AppID]; !present {
+		// The connection wasn't found, so we'll create it.
+		fcmClients.lock.RUnlock()
+		fcmClients.lock.Lock()
+		if client, present = fcmClients.clients[AppID]; !present {
+			client, err = initFCMClient(AppID)
+
+			fcmClients.clients[AppID] = client
+		}
+		fcmClients.lock.Unlock()
+	} else {
+		fcmClients.lock.RUnlock()
+	}
+
+	return client, err
 }
 
 // GetAPNSClient returns an existing APNs client connection if available else
@@ -503,6 +561,105 @@ Retry:
 	}
 
 	return isError
+}
+
+// PushToAndroidFcm provide send notification through FCM.
+func PushToAndroidFcm(req PushNotification) bool {
+	LogAccess.Debug("Start push notification for FCM")
+	defer req.Done()
+	var retryCount = 0
+	var maxRetry = PushConf.Apps[req.AppID].AndroidFcm.MaxRetry
+
+	if req.Retry > 0 && req.Retry < maxRetry {
+		maxRetry = req.Retry
+	}
+
+Retry:
+	var isError = false
+	var newTokens []string
+
+	notification, data := GetFcmNotification(req)
+
+	// get fcm client
+	fcmClient, err := GetFcmClient(req.AppID)
+	if err != nil {
+		LogPush(FailedPush, "", req, err)
+		isError = true
+		return isError
+	}
+
+	for _, token := range req.Tokens {
+
+		// new fcm msg
+		fcmClient.NewFcmMsgTo(token, data)
+		fcmClient.SetNotificationPayload(notification)
+
+		// Send fcm msg
+		res, err := fcmClient.Send()
+
+		if err != nil {
+			// apns server error
+			LogPush(FailedPush, token, req, err)
+			newTokens = append(newTokens, token)
+			isError = true
+			continue
+		}
+
+		if res.Ok {
+			LogPush(SucceededPush, token, req, nil)
+		}
+	}
+
+	if isError == true && retryCount < maxRetry {
+		retryCount++
+
+		// resend fail token
+		req.Tokens = newTokens
+		goto Retry
+	}
+
+	return isError
+}
+
+// GetFcmNotification use for define FCM notification.
+// HTTP Connection Server Reference for FCM
+// https://github.com/NaySoftware/go-fcm/blob/master/fcm.go#L75
+// https://firebase.google.com/docs/cloud-messaging/http-server-ref
+func GetFcmNotification(req PushNotification) (fcm.NotificationPayload, interface{}) {
+	notification := fcm.NotificationPayload{}
+	data := make(map[string]interface{})
+
+	// Add another field
+	if (len(req.Data) > 0 || len(req.AndroidData) > 0) {
+
+		// Get Common data fields
+		for k, v := range req.Data {
+			data[k] = v
+		}
+
+		// Get platform specific data fields
+		for k, v := range req.AndroidData {
+			data[k] = v
+		}
+	}
+
+	// Set request message if body is empty
+	if len(req.Message) > 0 {
+		notification.Body = req.Message
+		data["Body"] = req.Message
+	}
+
+	if len(req.Title) > 0 {
+		notification.Title = req.Title
+		data["Title"] = req.Title
+	}
+
+	if len(req.Sound) > 0 {
+		notification.Sound = req.Sound
+		data["Sound"] = req.Sound
+	}
+
+	return notification, data
 }
 
 // GetAndroidNotification use for define Android notification.

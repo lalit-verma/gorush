@@ -5,6 +5,8 @@ const (
 	PlatFormIos = iota + 1
 	// PlatFormAndroid constant is 2 for Android
 	PlatFormAndroid
+	// PlatFormAndroidFcm constant is 3 for Android-FCM
+	PlatFormAndroidFcm
 )
 
 const (
