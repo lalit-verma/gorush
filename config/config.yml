@@ -43,7 +43,12 @@ apps:
   normal:
     android:
       enabled: true
-      apikey: "AIzaSyDDl2OZL9pMVUuMWbM52Tyj7wFTse8uiVk"
+      apikey: "key"
+      max_retry: 3 # resend fail notification, default value zero is disabled
+
+    android_fcm:
+      enabled: true
+      apikey: "key"
       max_retry: 3 # resend fail notification, default value zero is disabled
 
     ios:
@@ -56,7 +61,12 @@ apps:
   delivery:
     android:
       enabled: true
-      apikey: "AIzaSyDDl2OZL9pMVUuMWbM52Tyj7wFTse8uiVk"
+      apikey: "key"
+      max_retry: 3 # resend fail notification, default value zero is disabled
+
+    android_fcm:
+      enabled: true
+      apikey: "key"
       max_retry: 3 # resend fail notification, default value zero is disabled
 
     ios:

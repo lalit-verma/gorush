@@ -3,6 +3,12 @@
 	"ignore": "test",
 	"package": [
 		{
+			"checksumSHA1": "KRVwJaK+eoA/1Z7gJbfugATpnB8=",
+			"path": "github.com/NaySoftware/go-fcm",
+			"revision": "8b8dc5883a3bfd52fd4d296d2ab89aa1b703aed4",
+			"revisionTime": "2017-02-05T15:54:36Z"
+		},
+		{
 			"checksumSHA1": "XFl7nlkh1EUa3RvYEsT8Q4O1Mvc=",
 			"path": "github.com/Sirupsen/logrus",
 			"revision": "7f4b1adc791766938c29457bed0703fb9134421a",
