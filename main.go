@@ -250,7 +250,7 @@ func main() {
 			Platform: gorush.PlatFormIos,
 			Message:  message,
 			Title:    title,
-			AppID:    gorush.AppNameDynamic
+			AppID:    gorush.AppNameDynamic,
 		}
 
 		if topic != "" {

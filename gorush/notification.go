@@ -23,6 +23,13 @@ import (
 // D provide string array
 type D map[string]interface{}
 
+// Push response
+type PushResponse struct {
+	Status       string   `json:"status,omitempty"`
+	CanonicalId  string   `json:"canonical_id,omitempty"`
+	Error        string   `json:"error,omitempty"`
+}
+
 const (
 	// ApnsPriorityLow will tell APNs to send the push message at a time that takes
 	// into account power considerations for the device. Notifications with this
@@ -497,11 +504,13 @@ func GetIOSNotification(req PushNotification) *apns.Notification {
 }
 
 // PushToIOS provide send notification to APNs server.
-func PushToIOS(req PushNotification) bool {
+func PushToIOS(req PushNotification) map[string]*PushResponse {
 	LogAccess.Debug("Start push notification for iOS")
 	defer req.Done()
 	var retryCount = 0
 	var maxRetry = PushConf.Apps[req.AppID].Ios.MaxRetry
+
+	pushResponse := make(map[string]*PushResponse, 0)
 
 	if req.Retry > 0 && req.Retry < maxRetry {
 		maxRetry = req.Retry
@@ -518,7 +527,7 @@ Retry:
 	if err != nil {
 		LogPush(FailedPush, "", req, err)
 		isError = true
-		return isError
+		return pushResponse
 	}
 
 	for _, token := range req.Tokens {
@@ -527,8 +536,18 @@ Retry:
 		// send ios notification
 		res, err := apnsClient.Push(notification)
 
+		*pushResponse[token] = PushResponse{
+			Status:                "success",
+			CanonicalId:           "",
+			Error:                 "",
+		}
+
 		if err != nil {
 			// apns server error
+
+			pushResponse[token].Status = "apn_error"
+			pushResponse[token].Error  = err.Error()
+
 			LogPush(FailedPush, token, req, err)
 			StatStorage.AddIosError(1)
 			newTokens = append(newTokens, token)
@@ -539,6 +558,10 @@ Retry:
 		if res.StatusCode != 200 {
 			// error message:
 			// ref: https://github.com/sideshow/apns2/blob/master/response.go#L14-L65
+
+			pushResponse[token].Status = "failed"
+			pushResponse[token].Error  = res.Reason
+
 			LogPush(FailedPush, token, req, errors.New(res.Reason))
 			StatStorage.AddIosError(1)
 			newTokens = append(newTokens, token)
@@ -547,6 +570,7 @@ Retry:
 		}
 
 		if res.Sent() {
+
 			LogPush(SucceededPush, token, req, nil)
 			StatStorage.AddIosSuccess(1)
 		}
@@ -560,15 +584,17 @@ Retry:
 		goto Retry
 	}
 
-	return isError
+	return pushResponse
 }
 
 // PushToAndroidFcm provide send notification through FCM.
-func PushToAndroidFcm(req PushNotification) bool {
+func PushToAndroidFcm(req PushNotification) map[string]*PushResponse {
 	LogAccess.Debug("Start push notification for FCM")
 	defer req.Done()
 	var retryCount = 0
 	var maxRetry = PushConf.Apps[req.AppID].AndroidFcm.MaxRetry
+
+	pushResponse := make(map[string]*PushResponse, 0)
 
 	if req.Retry > 0 && req.Retry < maxRetry {
 		maxRetry = req.Retry
@@ -585,7 +611,7 @@ Retry:
 	if err != nil {
 		LogPush(FailedPush, "", req, err)
 		isError = true
-		return isError
+		return pushResponse
 	}
 
 	for _, token := range req.Tokens {
@@ -597,8 +623,17 @@ Retry:
 		// Send fcm msg
 		res, err := fcmClient.Send()
 
+		*pushResponse[token] = PushResponse{
+			Status:                "success",
+			CanonicalId:           "",
+			Error:                 "",
+		}
+
 		if err != nil {
-			// apns server error
+			// fcm error
+			pushResponse[token].Status = "failed"
+			pushResponse[token].Error  = err.Error()
+
 			LogPush(FailedPush, token, req, err)
 			newTokens = append(newTokens, token)
 			isError = true
@@ -618,7 +653,7 @@ Retry:
 		goto Retry
 	}
 
-	return isError
+	return pushResponse
 }
 
 // GetFcmNotification use for define FCM notification.
@@ -716,7 +751,7 @@ func GetAndroidNotification(req PushNotification) gcm.HttpMessage {
 }
 
 // PushToAndroid provide send notification to Android server.
-func PushToAndroid(req PushNotification) bool {
+func PushToAndroid(req PushNotification) map[string]*PushResponse {
 	LogAccess.Debug("Start push notification for Android")
 
 	defer req.Done()
@@ -727,6 +762,8 @@ func PushToAndroid(req PushNotification) bool {
 	if req.Retry > 0 && req.Retry < maxRetry {
 		maxRetry = req.Retry
 	}
+
+	pushResponse := make(map[string]*PushResponse, 0)
 
 	// Set api key if none provided in req
 	var apiKey = req.APIKey
@@ -739,7 +776,7 @@ func PushToAndroid(req PushNotification) bool {
 
 	if err != nil {
 		LogError.Error("request error: " + err.Error())
-		return false
+		return pushResponse
 	}
 
 Retry:
@@ -751,7 +788,7 @@ Retry:
 	if err != nil {
 		// GCM server error
 		LogError.Error("GCM server error: " + err.Error())
-		return false
+		return pushResponse
 	}
 
 	LogAccess.Debug(fmt.Sprintf("Android Success count: %d, Failure count: %d", res.Success, res.Failure))
@@ -760,9 +797,25 @@ Retry:
 
 	var newTokens []string
 	for k, result := range res.Results {
+
+		*pushResponse[req.Tokens[k]] = PushResponse{
+			Status:                "success",
+			CanonicalId:           "",
+			Error:                 "",
+		}
+
+		if result.RegistrationId != "" {
+
+			pushResponse[req.Tokens[k]].CanonicalId = result.RegistrationId
+		}
+
 		if result.Error != "" {
 			isError = true
 			newTokens = append(newTokens, req.Tokens[k])
+
+			pushResponse[req.Tokens[k]].Status = "failed"
+			pushResponse[req.Tokens[k]].Error = result.Error
+
 			LogPush(FailedPush, req.Tokens[k], req, errors.New(result.Error))
 			continue
 		}
@@ -778,5 +831,5 @@ Retry:
 		goto Retry
 	}
 
-	return true
+	return pushResponse
 }
