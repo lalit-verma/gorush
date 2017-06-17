@@ -536,7 +536,7 @@ Retry:
 		// send ios notification
 		res, err := apnsClient.Push(notification)
 
-		*pushResponse[token] = PushResponse{
+		pushResponse[token] = &PushResponse{
 			Status:                "success",
 			CanonicalId:           "",
 			Error:                 "",
@@ -623,7 +623,7 @@ Retry:
 		// Send fcm msg
 		res, err := fcmClient.Send()
 
-		*pushResponse[token] = PushResponse{
+		pushResponse[token] = &PushResponse{
 			Status:                "success",
 			CanonicalId:           "",
 			Error:                 "",
@@ -798,7 +798,7 @@ Retry:
 	var newTokens []string
 	for k, result := range res.Results {
 
-		*pushResponse[req.Tokens[k]] = PushResponse{
+		pushResponse[req.Tokens[k]] = &PushResponse{
 			Status:                "success",
 			CanonicalId:           "",
 			Error:                 "",
