@@ -27,18 +27,6 @@ api:
   sys_stat_uri: "/sys/stats"
   metric_uri: "/metrics"
 
-# android:
-#   enabled: true
-#   apikey: "AIzaSyDDl2OZL9pMVUuMWbM52Tyj7wFTse8uiVk"
-#   max_retry: 3 # resend fail notification, default value zero is disabled
-
-# ios:
-#   enabled: false
-#   key_path: "key.pem"
-#   password: "" # certificate password, default as empty string.
-#   production: false
-#   max_retry: 0 # resend fail notification, default value zero is disabled
-
 apps:
   normal:
     android:
