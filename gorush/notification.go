@@ -263,29 +263,7 @@ func initFCMClient(AppID string) (*fcm.FcmClient, error) {
 // GetFCMClient returns an existing FCM client connection if available else
 // creates a new connection and returns
 func GetFcmClient(AppID string) (*fcm.FcmClient, error) {
-	var client *fcm.FcmClient
-	var present bool
-	var err error
-
-	if len(fcmClients.clients) == 0 {
-		fcmClients.clients = make(map[string]*fcm.FcmClient, 0)
-	}
-
-	fcmClients.lock.RLock()
-	if client, present = fcmClients.clients[AppID]; !present {
-		// The connection wasn't found, so we'll create it.
-		fcmClients.lock.RUnlock()
-		fcmClients.lock.Lock()
-		if client, present = fcmClients.clients[AppID]; !present {
-			client, err = initFCMClient(AppID)
-
-			fcmClients.clients[AppID] = client
-		}
-		fcmClients.lock.Unlock()
-	} else {
-		fcmClients.lock.RUnlock()
-	}
-
+    client, err := initFCMClient(AppID)
 	return client, err
 }
 
